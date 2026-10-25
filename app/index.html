@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1920, height=1080">
+<title>Accueil</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0e1116; color: #f2f4f7; font-family: 'Segoe UI', 'Samsung One', system-ui, sans-serif; overflow: hidden; user-select: none; }
+  main { box-sizing: border-box; height: 100%; padding: 48px 96px; display: flex; flex-direction: column; gap: 32px; }
+  header { display: flex; justify-content: space-between; align-items: center; }
+  #salut { font-size: 52px; font-weight: 600; }
+  #heure { font-size: 36px; color: #a9b3c1; }
+  .rangee { display: flex; flex-direction: column; gap: 14px; }
+  .rangee h2 { margin: 0; font-size: 24px; font-weight: 600; color: #a9b3c1; text-transform: uppercase; letter-spacing: 0.08em; }
+  .tuiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 24px; }
+  .tuile { height: 130px; min-width: 0; box-sizing: border-box; padding: 0 24px; border-radius: 20px; display: flex; align-items: center; font-size: 30px; font-weight: 700; color: #fff; transition: transform 0.12s; }
+  .tuile.focus { outline: 6px solid #fff; outline-offset: 6px; transform: scale(1.05); }
+  #message { font-size: 26px; color: #ffb4a8; min-height: 32px; }
+</style>
+</head>
+<body>
+<main>
+  <header><span id="salut">Bonsoir</span><span id="heure"></span></header>
+  <div id="rangees"></div>
+  <div id="message"></div>
+</main>
+<script>
+  // Identifiants Tizen des applis (relevés sur la TV) ; "tizentube" = module TizenBrew.
+  var RANGEES = [
+    { titre: 'Regarder', applis: [
+      { nom: 'YouTube', id: 'tizentube', secours: '111299001912', couleur: '#c4302b' },
+      { nom: 'Netflix', id: '3201907018807', couleur: '#b20710' },
+      { nom: 'Prime Video', id: '3201910019365', couleur: '#0f79af' },
+      { nom: 'Disney+', id: '3201901017640', couleur: '#113ccf' },
+      { nom: 'HBO Max', id: 'A_RELEVER_MAX', couleur: '#5822b4' },
+      { nom: 'Crunchyroll', id: 'A_RELEVER_CRUNCHYROLL', couleur: '#e8650f' }
+    ] },
+    { titre: 'En direct', applis: [
+      { nom: 'Twitch', id: '3202203026841', couleur: '#6441a5' }
+    ] },
+    { titre: 'Écouter', applis: [
+      { nom: 'Spotify', id: '3201606009684', couleur: '#16833f' }
+    ] },
+    { titre: 'Plus', applis: [
+      { nom: 'Applis (store)', id: 'A_RELEVER_STORE', couleur: '#2d5a8c' },
+      { nom: 'TizenBrew', id: 'xvvl3S1bvH.TizenBrewStandalone', couleur: '#4a3f6b' }
+    ] }
+  ];
+
+  var grille = [];
+  var ligne = 0, col = 0;
+
+  function dessiner() {
+    var conteneur = document.getElementById('rangees');
+    conteneur.style.display = 'flex';
+    conteneur.style.flexDirection = 'column';
+    conteneur.style.gap = '32px';
+    RANGEES.forEach(function (r) {
+      var bloc = document.createElement('section');
+      bloc.className = 'rangee';
+      var titre = document.createElement('h2');
+      titre.textContent = r.titre;
+      var tuiles = document.createElement('div');
+      tuiles.className = 'tuiles';
+      var ligneTuiles = [];
+      r.applis.forEach(function (a) {
+        var t = document.createElement('div');
+        t.className = 'tuile';
+        t.style.background = a.couleur;
+        t.textContent = a.nom;
+        t.appli = a;
+        tuiles.appendChild(t);
+        ligneTuiles.push(t);
+      });
+      bloc.appendChild(titre);
+      bloc.appendChild(tuiles);
+      conteneur.appendChild(bloc);
+      grille.push(ligneTuiles);
+    });
+    focaliser();
+  }
+
+  function focaliser() {
+    grille.forEach(function (l) { l.forEach(function (t) { t.classList.remove('focus'); }); });
+    col = Math.min(col, grille[ligne].length - 1);
+    grille[ligne][col].classList.add('focus');
+  }
+
+  function dire(texte) { document.getElementById('message').textContent = texte; }
+
+  function lancerNatif(id) {
+    try {
+      tizen.application.launch(id, function () {}, function (e) { dire('Lancement impossible : ' + e.message); });
+    } catch (e) { dire('API Tizen indisponible : ' + e.message); }
+  }
+
+  // TizenTube est un module TizenBrew : on demande au service de TizenBrew de le lancer.
+  function lancerTizenTube(secours) {
+    try {
+      var ws = new WebSocket('ws://localhost:8081');
+      ws.onopen = function () { ws.send(JSON.stringify({ type: 4 })); };
+      ws.onmessage = function (ev) {
+        var msg = JSON.parse(ev.data);
+        if (msg.type !== 4 || !msg.payload) return;
+        var m = msg.payload.filter(function (x) { return x.fullName === 'npm/@foxreis/tizentube'; })[0];
+        if (!m) { ws.close(); lancerNatif(secours); return; }
+        (m.keys || []).forEach(function (k) { try { tizen.tvinputdevice.registerKey(k); } catch (e) {} });
+        ws.send(JSON.stringify({ type: 5, payload: m }));
+        if (!m.evaluateScriptOnDocumentStart) location.href = m.appPath;
+      };
+      ws.onerror = function () { lancerNatif(secours); };
+    } catch (e) { lancerNatif(secours); }
+  }
+
+  function lancer(a) {
+    if (a.id.indexOf('A_RELEVER') === 0) { dire(a.nom + ' : identifiant pas encore relevé.'); return; }
+    if (a.id === 'tizentube') lancerTizenTube(a.secours); else lancerNatif(a.id);
+  }
+
+  document.addEventListener('keydown', function (e) {
+    switch (e.keyCode) {
+      case 37: col = Math.max(0, col - 1); break;
+      case 39: col = Math.min(grille[ligne].length - 1, col + 1); break;
+      case 38: ligne = Math.max(0, ligne - 1); break;
+      case 40: ligne = Math.min(grille.length - 1, ligne + 1); break;
+      case 13: lancer(grille[ligne][col].appli); return;
+      default: return;
+    }
+    e.preventDefault();
+    focaliser();
+  });
+
+  function horloge() {
+    var d = new Date();
+    var h = d.getHours();
+    document.getElementById('salut').textContent = h < 12 ? 'Bonjour' : (h < 18 ? 'Bon après-midi' : 'Bonsoir');
+    document.getElementById('heure').textContent = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' + ('0' + h).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  }
+
+  dessiner();
+  horloge();
+  setInterval(horloge, 20000);
+</script>
+</body>
+</html>
