@@ -88,10 +88,22 @@
 
   function dire(texte) { document.getElementById('message').textContent = texte; }
 
+  // La page d'un module TizenBrew n'a pas toujours l'API tizen : on passe alors par l'API
+  // locale de la TV (celle de la télécommande réseau), qui lance une appli sur un simple POST.
+  function lancerParApiLocale(id) {
+    fetch('http://127.0.0.1:8001/api/v2/applications/' + id, { method: 'POST', mode: 'no-cors' })
+      .then(function () { dire(''); })
+      .catch(function (e) { dire('Lancement impossible : ' + e.message); });
+  }
+
   function lancerNatif(id) {
-    try {
-      tizen.application.launch(id, function () {}, function (e) { dire('Lancement impossible : ' + e.message); });
-    } catch (e) { dire('API Tizen indisponible : ' + e.message); }
+    if (typeof tizen !== 'undefined' && tizen.application) {
+      try {
+        tizen.application.launch(id, function () {}, function () { lancerParApiLocale(id); });
+        return;
+      } catch (e) {}
+    }
+    lancerParApiLocale(id);
   }
 
   // TizenTube est un module TizenBrew : on demande au service de TizenBrew de le lancer.
