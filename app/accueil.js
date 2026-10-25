@@ -1,4 +1,7 @@
-  var VERSION = '1.1.1';
+  var VERSION = '1.2.0';
+  // Service du module à démarrer : il est lu par TizenBrew sur jsDelivr à la version épinglée de
+  // `module` et écoute `port` (une version de service = une étiquette Git + un port à lui).
+  var SERVICE = { module: 'gh/vguyon-dev/tv-accueil@v1.1.2', port: 8096 };
   // Nom complet du module tel que TizenBrew l'a enregistré (ex. gh/vguyon-dev/tv-accueil@v1.0.9),
   // lu dans l'adresse de la page : http://127.0.0.1:8081/module/<nom encodé>/app/index.html.
   var MODULE = (function () {
@@ -24,7 +27,8 @@
     ] },
     { titre: 'Plus', applis: [
       { nom: 'Applis (store)', id: 'store', couleur: '#2d5a8c' },
-      { nom: 'TizenBrew', id: 'menu-tizenbrew', couleur: '#4a3f6b' }
+      { nom: 'TizenBrew', id: 'menu-tizenbrew', couleur: '#4a3f6b' },
+      { nom: 'Éteindre', id: 'eteindre', couleur: '#3a3f47' }
     ] }
   ];
 
@@ -87,7 +91,7 @@
   // l'appli par son identifiant Tizen.
   function lancerNatif(id, numero) {
     trace('service lancer ' + id);
-    fetch('http://127.0.0.1:8095/lancer/' + encodeURIComponent(id))
+    fetch('http://127.0.0.1:' + SERVICE.port + '/lancer/' + encodeURIComponent(id))
       .then(function (r) { return r.json(); })
       .then(function (j) {
         trace('service réponse ' + JSON.stringify(j));
@@ -119,6 +123,14 @@
     if (a.id === 'store') { dire('Store : touche Accueil de la télécommande, puis Applications.'); return; }
     // Retour au menu de TizenBrew (gestion des modules) : la page y a été ouverte par navigation.
     if (a.id === 'menu-tizenbrew') { reglerAutolancement('', function () { history.back(); }); return; }
+    // Éteindre depuis l'Accueil : la TV rouvre la dernière appli à l'allumage, donc l'Accueil.
+    if (a.id === 'eteindre') {
+      dire('Extinction…');
+      fetch('http://127.0.0.1:' + SERVICE.port + '/eteindre').then(function (r) { return r.json(); })
+        .then(function (j) { trace('eteindre ' + JSON.stringify(j)); if (!j.ok) dire('Extinction impossible : ' + j.erreur + ' (accepter « Accueil » sur la TV si demandé)'); })
+        .catch(function (e) { dire('Extinction impossible : ' + e.message); });
+      return;
+    }
     if (a.id === 'tizentube') lancerTizenTube(a.secours, a.numero); else lancerNatif(a.id, a.numero);
   }
 
@@ -156,10 +168,10 @@
           trace('fiche module ' + (m ? ('version ' + m.version + ' serviceFile=' + m.serviceFile) : 'absente'));
           // Le service TizenBrew garde la fiche lue à son démarrage (parfois périmée, sans
           // serviceFile) : on lui passe directement le chemin du service.
-          ws.send(JSON.stringify({ type: 6, payload: { fullName: MODULE, name: MODULE.replace(/^gh\//, ''), serviceFile: 'service/service.js' } }));
+          ws.send(JSON.stringify({ type: 6, payload: { fullName: SERVICE.module, name: SERVICE.module.replace(/^gh\//, ''), serviceFile: 'service/service.js' } }));
           setTimeout(function () {
             ws.send(JSON.stringify({ type: 7 }));
-            fetch('http://127.0.0.1:8095/').then(function (r) { return r.text(); })
+            fetch('http://127.0.0.1:' + SERVICE.port + '/').then(function (r) { return r.text(); })
               .then(function (t) { trace('service après démarrage ' + t); })
               .catch(function (e) { trace('service toujours injoignable ' + e.message); });
           }, 5000);
@@ -206,7 +218,7 @@
   // Au chargement : version, origine, présence de tizen, et état du service du module.
   function diagnostic() {
     trace('chargement ' + location.href + ' module=' + MODULE + ' tizen=' + (typeof tizen));
-    fetch('http://127.0.0.1:8095/')
+    fetch('http://127.0.0.1:' + SERVICE.port + '/')
       .then(function (r) { return r.text(); })
       .then(function (t) { trace('service ' + t); })
       .catch(function (e) { trace('service injoignable ' + e.message); demarrerService(); });
