@@ -150,8 +150,17 @@
     document.getElementById('heure').textContent = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' + ('0' + h).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
   }
 
+  // Diagnostic affiché en bas de page : API tizen présente ? API locale de la TV joignable ?
+  function diagnostic() {
+    var t = (typeof tizen !== 'undefined') ? ('tizen oui, application ' + (tizen.application ? 'oui' : 'non')) : 'tizen non';
+    fetch('http://127.0.0.1:8001/api/v2/')
+      .then(function (r) { dire('Diag : ' + t + ' | API locale HTTP ' + r.status + ' | page ' + location.origin); })
+      .catch(function (e) { dire('Diag : ' + t + ' | API locale erreur ' + e.message + ' | page ' + location.origin); });
+  }
+
   dessiner();
   horloge();
+  diagnostic();
   setInterval(horloge, 20000);
 </script>
 </body>
