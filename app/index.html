@@ -25,7 +25,7 @@
   <div id="message"></div>
 </main>
 <script>
-  var VERSION = '1.0.7';
+  var VERSION = '1.0.8';
   // id = identifiant Tizen (app_tizen_id de `sdb shell 0 vd_applist`), lancé par le service du
   // module ; numero = identifiant Samsung de l'API locale, en secours. "tizentube" = module TizenBrew.
   var RANGEES = [
@@ -45,7 +45,7 @@
     ] },
     { titre: 'Plus', applis: [
       { nom: 'Applis (store)', id: 'store', couleur: '#2d5a8c' },
-      { nom: 'TizenBrew', id: 'xvvl3S1bvH.TizenBrewStandalone', numero: 'xvvl3S1bvH.TizenBrewStandalone', couleur: '#4a3f6b' }
+      { nom: 'TizenBrew', id: 'menu-tizenbrew', couleur: '#4a3f6b' }
     ] }
   ];
 
@@ -138,6 +138,8 @@
   function lancer(a) {
     // Le store Samsung ne se lance pas par identifiant (refusé par la TV) : on indique le chemin.
     if (a.id === 'store') { dire('Store : touche Accueil de la télécommande, puis Applications.'); return; }
+    // Retour au menu de TizenBrew (gestion des modules) : la page y a été ouverte par navigation.
+    if (a.id === 'menu-tizenbrew') { reglerAutolancement('', function () { history.back(); }); return; }
     if (a.id === 'tizentube') lancerTizenTube(a.secours, a.numero); else lancerNatif(a.id, a.numero);
   }
 
@@ -191,6 +193,21 @@
     } catch (e) { trace('ws 8081 exception ' + e.message); }
   }
 
+  // Module ouvert au démarrage de TizenBrew (événement 10 = ModuleAction, action autolaunch ;
+  // '' le désactive). L'Accueil se déclare à chaque ouverture ; la tuile TizenBrew l'efface avant de
+  // revenir au menu, sinon le menu relancerait aussitôt l'Accueil.
+  function reglerAutolancement(module, ensuite) {
+    try {
+      var ws = new WebSocket('ws://localhost:8081');
+      ws.onopen = function () {
+        ws.send(JSON.stringify({ type: 10, payload: { action: 'autolaunch', module: module } }));
+        trace('autolaunch ' + (module || '(aucun)'));
+        setTimeout(function () { ws.close(); if (ensuite) ensuite(); }, 300);
+      };
+      ws.onerror = function () { trace('autolaunch ws erreur'); if (ensuite) ensuite(); };
+    } catch (e) { if (ensuite) ensuite(); }
+  }
+
   // Au chargement : version, origine, présence de tizen, et état du service du module.
   function diagnostic() {
     trace('chargement ' + location.href + ' tizen=' + (typeof tizen));
@@ -203,6 +220,7 @@
   dessiner();
   horloge();
   diagnostic();
+  reglerAutolancement('gh/vguyon-dev/tv-accueil');
   setInterval(horloge, 20000);
 </script>
 </body>

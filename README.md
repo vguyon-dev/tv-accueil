@@ -14,6 +14,9 @@ télécommande.
   l'objet `tizen` du service) sur `http://127.0.0.1:8095/lancer/<identifiant Tizen>`. En secours :
   l'API locale de la TV (`POST http://127.0.0.1:8001/api/v2/applications/<identifiant Samsung>`).
   Les deux identifiants sont en tête de `app/index.html` (relevés par `sdb shell 0 vd_applist`).
+- Démarrage : à chaque ouverture, l'Accueil se déclare module de démarrage de TizenBrew
+  (`ModuleAction` autolaunch). La tuile TizenBrew efface ce réglage puis revient au menu de
+  TizenBrew (`history.back()`), qui sinon relancerait aussitôt l'Accueil.
 - Mise au point : la page envoie son journal en requêtes d'image vers `192.168.1.99:8099` (PC du
   salon) ; sans écoute sur ce port, rien ne se passe.
 
