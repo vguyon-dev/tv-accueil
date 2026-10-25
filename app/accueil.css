@@ -1,0 +1,11 @@
+  html, body { margin: 0; height: 100%; background: #0e1116; color: #f2f4f7; font-family: 'Segoe UI', 'Samsung One', system-ui, sans-serif; overflow: hidden; user-select: none; }
+  main { box-sizing: border-box; height: 100%; padding: 48px 96px; display: flex; flex-direction: column; gap: 32px; }
+  header { display: flex; justify-content: space-between; align-items: center; }
+  #salut { font-size: 52px; font-weight: 600; }
+  #heure { font-size: 36px; color: #a9b3c1; }
+  .rangee { display: flex; flex-direction: column; gap: 14px; }
+  .rangee h2 { margin: 0; font-size: 24px; font-weight: 600; color: #a9b3c1; text-transform: uppercase; letter-spacing: 0.08em; }
+  .tuiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 24px; }
+  .tuile { height: 130px; min-width: 0; box-sizing: border-box; padding: 0 24px; border-radius: 20px; display: flex; align-items: center; font-size: 30px; font-weight: 700; color: #fff; transition: transform 0.12s; }
+  .tuile.focus { outline: 6px solid #fff; outline-offset: 6px; transform: scale(1.05); }
+  #message { font-size: 26px; color: #ffb4a8; min-height: 32px; }

@@ -4,224 +4,38 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=1920, height=1080">
 <title>Accueil</title>
-<style>
-  html, body { margin: 0; height: 100%; background: #0e1116; color: #f2f4f7; font-family: 'Segoe UI', 'Samsung One', system-ui, sans-serif; overflow: hidden; user-select: none; }
-  main { box-sizing: border-box; height: 100%; padding: 48px 96px; display: flex; flex-direction: column; gap: 32px; }
-  header { display: flex; justify-content: space-between; align-items: center; }
-  #salut { font-size: 52px; font-weight: 600; }
-  #heure { font-size: 36px; color: #a9b3c1; }
-  .rangee { display: flex; flex-direction: column; gap: 14px; }
-  .rangee h2 { margin: 0; font-size: 24px; font-weight: 600; color: #a9b3c1; text-transform: uppercase; letter-spacing: 0.08em; }
-  .tuiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 24px; }
-  .tuile { height: 130px; min-width: 0; box-sizing: border-box; padding: 0 24px; border-radius: 20px; display: flex; align-items: center; font-size: 30px; font-weight: 700; color: #fff; transition: transform 0.12s; }
-  .tuile.focus { outline: 6px solid #fff; outline-offset: 6px; transform: scale(1.05); }
-  #message { font-size: 26px; color: #ffb4a8; min-height: 32px; }
-</style>
+<style>html, body { margin: 0; height: 100%; background: #0e1116; }</style>
 </head>
 <body>
 <main>
-  <header><span id="salut">Bonsoir</span><span id="heure"></span></header>
+  <header><span id="salut"></span><span id="heure"></span></header>
   <div id="rangees"></div>
   <div id="message"></div>
 </main>
 <script>
-  var VERSION = '1.0.8';
-  // id = identifiant Tizen (app_tizen_id de `sdb shell 0 vd_applist`), lancé par le service du
-  // module ; numero = identifiant Samsung de l'API locale, en secours. "tizentube" = module TizenBrew.
-  var RANGEES = [
-    { titre: 'Regarder', applis: [
-      { nom: 'YouTube', id: 'tizentube', secours: '9Ur5IzDKqV.TizenYouTube', numero: '111299001912', couleur: '#c4302b' },
-      { nom: 'Netflix', id: 'org.tizen.netflix-app', numero: '3201907018807', couleur: '#b20710' },
-      { nom: 'Prime Video', id: 'org.tizen.primevideo', numero: '3201910019365', couleur: '#0f79af' },
-      { nom: 'Disney+', id: 'MCmYXNxgcu.DisneyPlus', numero: '3201901017640', couleur: '#113ccf' },
-      { nom: 'HBO Max', id: '5b8c3eb16b.BeamCTVDev', numero: '3202301029760', couleur: '#5822b4' },
-      { nom: 'Crunchyroll', id: 'OGLLvqej7u.CrunchyrollWebApp', numero: '3202302030097', couleur: '#e8650f' }
-    ] },
-    { titre: 'En direct', applis: [
-      { nom: 'Twitch', id: 'Jz7aUrV2Q4.Twitch', numero: '3202203026841', couleur: '#6441a5' }
-    ] },
-    { titre: 'Écouter', applis: [
-      { nom: 'Spotify', id: 'rJeHak5zRg.Spotify', numero: '3201606009684', couleur: '#16833f' }
-    ] },
-    { titre: 'Plus', applis: [
-      { nom: 'Applis (store)', id: 'store', couleur: '#2d5a8c' },
-      { nom: 'TizenBrew', id: 'menu-tizenbrew', couleur: '#4a3f6b' }
-    ] }
-  ];
+  // Coquille fixe : le module est inscrit dans TizenBrew avec une version épinglée, et cette page
+  // ne change plus. Le style et le code viennent de la branche main sur GitHub à chaque ouverture
+  // (cache de 5 min au plus) ; si GitHub ne répond pas, on prend la copie livrée avec le module.
+  var BRUT = 'https://raw.githubusercontent.com/vguyon-dev/tv-accueil/main/app/';
+  var t = '?t=' + Date.now();
 
-  // Journal de mise au point : chaque étape part en requête d'image vers le PC du salon
-  // (écoute sur 192.168.1.99:8099). Sans PC allumé, l'image échoue en silence.
-  function trace(msg) {
-    try { new Image().src = 'http://192.168.1.99:8099/t?v=' + VERSION + '&m=' + encodeURIComponent(msg) + '&r=' + Math.random(); } catch (e) {}
-  }
-
-  var grille = [];
-  var ligne = 0, col = 0;
-
-  function dessiner() {
-    var conteneur = document.getElementById('rangees');
-    conteneur.style.display = 'flex';
-    conteneur.style.flexDirection = 'column';
-    conteneur.style.gap = '32px';
-    RANGEES.forEach(function (r) {
-      var bloc = document.createElement('section');
-      bloc.className = 'rangee';
-      var titre = document.createElement('h2');
-      titre.textContent = r.titre;
-      var tuiles = document.createElement('div');
-      tuiles.className = 'tuiles';
-      var ligneTuiles = [];
-      r.applis.forEach(function (a) {
-        var t = document.createElement('div');
-        t.className = 'tuile';
-        t.style.background = a.couleur;
-        t.textContent = a.nom;
-        t.appli = a;
-        tuiles.appendChild(t);
-        ligneTuiles.push(t);
-      });
-      bloc.appendChild(titre);
-      bloc.appendChild(tuiles);
-      conteneur.appendChild(bloc);
-      grille.push(ligneTuiles);
+  function charger(nom) {
+    return fetch(BRUT + nom + t).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    }).catch(function () {
+      return fetch(nom).then(function (r) { return r.text(); });
     });
-    focaliser();
   }
 
-  function focaliser() {
-    grille.forEach(function (l) { l.forEach(function (t) { t.classList.remove('focus'); }); });
-    col = Math.min(col, grille[ligne].length - 1);
-    grille[ligne][col].classList.add('focus');
-  }
-
-  function dire(texte) { document.getElementById('message').textContent = texte; trace('dire ' + texte); }
-
-  // Secours : l'API locale de la TV (celle de la télécommande réseau), par l'identifiant Samsung.
-  function lancerParApiLocale(numero) {
-    trace('api locale POST ' + numero);
-    fetch('http://127.0.0.1:8001/api/v2/applications/' + numero, { method: 'POST' })
-      .then(function (r) { return r.text().then(function (t) { trace('api locale HTTP ' + r.status + ' ' + t); }); })
-      .catch(function (e) { dire('Lancement impossible : ' + e.message); });
-  }
-
-  // La page n'a pas l'API tizen : le service du module (service/service.js) la détient et lance
-  // l'appli par son identifiant Tizen.
-  function lancerNatif(id, numero) {
-    trace('service lancer ' + id);
-    fetch('http://127.0.0.1:8095/lancer/' + encodeURIComponent(id))
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
-        trace('service réponse ' + JSON.stringify(j));
-        if (!j.ok) { if (numero) lancerParApiLocale(numero); else dire('Lancement impossible : ' + j.erreur); }
-      })
-      .catch(function (e) { trace('service injoignable ' + e.message); if (numero) lancerParApiLocale(numero); });
-  }
-
-  // TizenTube est un module TizenBrew : on demande au service de TizenBrew de le lancer.
-  function lancerTizenTube(secours, numero) {
-    try {
-      var ws = new WebSocket('ws://localhost:8081');
-      ws.onopen = function () { ws.send(JSON.stringify({ type: 4 })); };
-      ws.onmessage = function (ev) {
-        var msg = JSON.parse(ev.data);
-        if (msg.type !== 4 || !msg.payload) return;
-        var m = msg.payload.filter(function (x) { return x.fullName === 'npm/@foxreis/tizentube'; })[0];
-        if (!m) { ws.close(); lancerNatif(secours, numero); return; }
-        (m.keys || []).forEach(function (k) { try { tizen.tvinputdevice.registerKey(k); } catch (e) {} });
-        ws.send(JSON.stringify({ type: 5, payload: m }));
-        if (!m.evaluateScriptOnDocumentStart) location.href = m.appPath;
-      };
-      ws.onerror = function () { lancerNatif(secours, numero); };
-    } catch (e) { lancerNatif(secours, numero); }
-  }
-
-  function lancer(a) {
-    // Le store Samsung ne se lance pas par identifiant (refusé par la TV) : on indique le chemin.
-    if (a.id === 'store') { dire('Store : touche Accueil de la télécommande, puis Applications.'); return; }
-    // Retour au menu de TizenBrew (gestion des modules) : la page y a été ouverte par navigation.
-    if (a.id === 'menu-tizenbrew') { reglerAutolancement('', function () { history.back(); }); return; }
-    if (a.id === 'tizentube') lancerTizenTube(a.secours, a.numero); else lancerNatif(a.id, a.numero);
-  }
-
-  document.addEventListener('keydown', function (e) {
-    trace('touche ' + e.keyCode);
-    switch (e.keyCode) {
-      case 37: col = Math.max(0, col - 1); break;
-      case 39: col = Math.min(grille[ligne].length - 1, col + 1); break;
-      case 38: ligne = Math.max(0, ligne - 1); break;
-      case 40: ligne = Math.min(grille.length - 1, ligne + 1); break;
-      case 13: lancer(grille[ligne][col].appli); return;
-      default: return;
-    }
-    e.preventDefault();
-    focaliser();
+  Promise.all([charger('accueil.css'), charger('accueil.js')]).then(function (f) {
+    var style = document.createElement('style');
+    style.textContent = f[0];
+    document.head.appendChild(style);
+    new Function(f[1])();
+  }).catch(function (e) {
+    document.getElementById('message').textContent = 'Accueil indisponible : ' + e.message;
   });
-
-  function horloge() {
-    var d = new Date();
-    var h = d.getHours();
-    document.getElementById('salut').textContent = h < 12 ? 'Bonjour' : (h < 18 ? 'Bon après-midi' : 'Bonsoir');
-    document.getElementById('heure').textContent = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' + ('0' + h).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-  }
-
-  // S'assure que le service du module tourne : TizenBrew ne le démarre qu'avec une fiche de module
-  // à jour (événements de son service local : 4 = GetModules, 6 = StartService, 7 = GetServiceStatuses).
-  function demarrerService() {
-    try {
-      var ws = new WebSocket('ws://localhost:8081');
-      ws.onopen = function () { ws.send(JSON.stringify({ type: 4 })); };
-      ws.onmessage = function (ev) {
-        var msg = JSON.parse(ev.data);
-        if (msg.type === 4 && msg.payload) {
-          var m = msg.payload.filter(function (x) { return x.fullName === 'gh/vguyon-dev/tv-accueil'; })[0];
-          trace('fiche module ' + (m ? ('version ' + m.version + ' serviceFile=' + m.serviceFile) : 'absente'));
-          // Le service TizenBrew garde la fiche lue à son démarrage (parfois périmée, sans
-          // serviceFile) : on lui passe directement le chemin du service.
-          ws.send(JSON.stringify({ type: 6, payload: { fullName: 'gh/vguyon-dev/tv-accueil', name: 'vguyon-dev/tv-accueil', serviceFile: 'service/service.js' } }));
-          setTimeout(function () {
-            ws.send(JSON.stringify({ type: 7 }));
-            fetch('http://127.0.0.1:8095/').then(function (r) { return r.text(); })
-              .then(function (t) { trace('service après démarrage ' + t); })
-              .catch(function (e) { trace('service toujours injoignable ' + e.message); });
-          }, 5000);
-        } else if (msg.type === 7) {
-          trace('services ' + JSON.stringify(msg.payload));
-          ws.close();
-        }
-      };
-      ws.onerror = function () { trace('ws 8081 erreur'); };
-    } catch (e) { trace('ws 8081 exception ' + e.message); }
-  }
-
-  // Module ouvert au démarrage de TizenBrew (événement 10 = ModuleAction, action autolaunch ;
-  // '' le désactive). L'Accueil se déclare à chaque ouverture ; la tuile TizenBrew l'efface avant de
-  // revenir au menu, sinon le menu relancerait aussitôt l'Accueil.
-  function reglerAutolancement(module, ensuite) {
-    try {
-      var ws = new WebSocket('ws://localhost:8081');
-      ws.onopen = function () {
-        ws.send(JSON.stringify({ type: 10, payload: { action: 'autolaunch', module: module } }));
-        trace('autolaunch ' + (module || '(aucun)'));
-        setTimeout(function () { ws.close(); if (ensuite) ensuite(); }, 300);
-      };
-      ws.onerror = function () { trace('autolaunch ws erreur'); if (ensuite) ensuite(); };
-    } catch (e) { if (ensuite) ensuite(); }
-  }
-
-  // Au chargement : version, origine, présence de tizen, et état du service du module.
-  function diagnostic() {
-    trace('chargement ' + location.href + ' tizen=' + (typeof tizen));
-    fetch('http://127.0.0.1:8095/')
-      .then(function (r) { return r.text(); })
-      .then(function (t) { trace('service ' + t); })
-      .catch(function (e) { trace('service injoignable ' + e.message); demarrerService(); });
-  }
-
-  dessiner();
-  horloge();
-  diagnostic();
-  reglerAutolancement('gh/vguyon-dev/tv-accueil');
-  setInterval(horloge, 20000);
 </script>
 </body>
 </html>
