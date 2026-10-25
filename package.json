@@ -1,6 +1,6 @@
 {
   "name": "tv-accueil",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Accueil maison pour TV Samsung (module TizenBrew) : les applis de la maison rangées par usage.",
   "packageType": "app",
   "appName": "Accueil",

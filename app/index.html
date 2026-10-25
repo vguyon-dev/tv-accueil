@@ -25,7 +25,7 @@
   <div id="message"></div>
 </main>
 <script>
-  var VERSION = '1.0.5';
+  var VERSION = '1.0.6';
   // id = identifiant Tizen (app_tizen_id de `sdb shell 0 vd_applist`), lancé par le service du
   // module ; numero = identifiant Samsung de l'API locale, en secours. "tizentube" = module TizenBrew.
   var RANGEES = [
@@ -162,13 +162,35 @@
     document.getElementById('heure').textContent = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' + ('0' + h).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
   }
 
+  // S'assure que le service du module tourne : TizenBrew ne le démarre qu'avec une fiche de module
+  // à jour (événements de son service local : 4 = GetModules, 6 = StartService, 7 = GetServiceStatuses).
+  function demarrerService() {
+    try {
+      var ws = new WebSocket('ws://localhost:8081');
+      ws.onopen = function () { ws.send(JSON.stringify({ type: 4 })); };
+      ws.onmessage = function (ev) {
+        var msg = JSON.parse(ev.data);
+        if (msg.type === 4 && msg.payload) {
+          var m = msg.payload.filter(function (x) { return x.fullName === 'gh/vguyon-dev/tv-accueil'; })[0];
+          trace('fiche module ' + (m ? ('version ' + m.version + ' serviceFile=' + m.serviceFile) : 'absente'));
+          if (m && m.serviceFile) ws.send(JSON.stringify({ type: 6, payload: m }));
+          setTimeout(function () { ws.send(JSON.stringify({ type: 7 })); }, 4000);
+        } else if (msg.type === 7) {
+          trace('services ' + JSON.stringify(msg.payload));
+          ws.close();
+        }
+      };
+      ws.onerror = function () { trace('ws 8081 erreur'); };
+    } catch (e) { trace('ws 8081 exception ' + e.message); }
+  }
+
   // Au chargement : version, origine, présence de tizen, et état du service du module.
   function diagnostic() {
     trace('chargement ' + location.href + ' tizen=' + (typeof tizen));
     fetch('http://127.0.0.1:8095/')
       .then(function (r) { return r.text(); })
       .then(function (t) { trace('service ' + t); })
-      .catch(function (e) { trace('service injoignable ' + e.message); });
+      .catch(function (e) { trace('service injoignable ' + e.message); demarrerService(); });
   }
 
   dessiner();
