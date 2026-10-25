@@ -1,4 +1,4 @@
-  var VERSION = '1.1.0';
+  var VERSION = '1.1.1';
   // Nom complet du module tel que TizenBrew l'a enregistré (ex. gh/vguyon-dev/tv-accueil@v1.0.9),
   // lu dans l'adresse de la page : http://127.0.0.1:8081/module/<nom encodé>/app/index.html.
   var MODULE = (function () {
@@ -195,8 +195,10 @@
       var ws = new WebSocket('ws://localhost:8081');
       ws.onopen = function () {
         ws.send(JSON.stringify({ type: 10, payload: { action: 'remove', module: 'gh/vguyon-dev/tv-accueil' } }));
-        trace('ancien module retiré');
-        setTimeout(function () { ws.close(); }, 300);
+        // GetModules avec payload true : le service relit la configuration (sinon il garde sa liste).
+        ws.send(JSON.stringify({ type: 4, payload: true }));
+        trace('ancien module retiré, liste rechargée');
+        setTimeout(function () { ws.close(); }, 1500);
       };
     } catch (e) {}
   }
