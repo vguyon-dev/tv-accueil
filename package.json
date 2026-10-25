@@ -1,10 +1,11 @@
 {
   "name": "tv-accueil",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Accueil maison pour TV Samsung (module TizenBrew) : les applis de la maison rangées par usage.",
   "packageType": "app",
   "appName": "Accueil",
   "appPath": "app/index.html",
+  "serviceFile": "service/service.js",
   "keys": [],
   "license": "MIT"
 }
