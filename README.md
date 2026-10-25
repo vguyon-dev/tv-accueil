@@ -8,6 +8,7 @@ télécommande.
 - YouTube ouvre le module TizenBrew TizenTube (`npm/@foxreis/tizentube`) par le service local de
   TizenBrew (`ws://localhost:8081`, événements `GetModules` = 4 et `LaunchModule` = 5) ; à défaut,
   l'appli YouTube native.
+- La tuile du store affiche le chemin (Accueil, puis Applications) : la TV refuse de lancer le store par identifiant.
 - Les autres tuiles lancent l'appli native par `tizen.application.launch(<id>)`. Les identifiants
   sont en tête de `app/index.html`.
 

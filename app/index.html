@@ -32,8 +32,8 @@
       { nom: 'Netflix', id: '3201907018807', couleur: '#b20710' },
       { nom: 'Prime Video', id: '3201910019365', couleur: '#0f79af' },
       { nom: 'Disney+', id: '3201901017640', couleur: '#113ccf' },
-      { nom: 'HBO Max', id: 'A_RELEVER_MAX', couleur: '#5822b4' },
-      { nom: 'Crunchyroll', id: 'A_RELEVER_CRUNCHYROLL', couleur: '#e8650f' }
+      { nom: 'HBO Max', id: '3202301029760', couleur: '#5822b4' },
+      { nom: 'Crunchyroll', id: '3202302030097', couleur: '#e8650f' }
     ] },
     { titre: 'En direct', applis: [
       { nom: 'Twitch', id: '3202203026841', couleur: '#6441a5' }
@@ -42,7 +42,7 @@
       { nom: 'Spotify', id: '3201606009684', couleur: '#16833f' }
     ] },
     { titre: 'Plus', applis: [
-      { nom: 'Applis (store)', id: 'A_RELEVER_STORE', couleur: '#2d5a8c' },
+      { nom: 'Applis (store)', id: 'store', couleur: '#2d5a8c' },
       { nom: 'TizenBrew', id: 'xvvl3S1bvH.TizenBrewStandalone', couleur: '#4a3f6b' }
     ] }
   ];
@@ -113,7 +113,8 @@
   }
 
   function lancer(a) {
-    if (a.id.indexOf('A_RELEVER') === 0) { dire(a.nom + ' : identifiant pas encore relevé.'); return; }
+    // Le store Samsung ne se lance pas par identifiant (refusé par la TV) : on indique le chemin.
+    if (a.id === 'store') { dire('Store : touche Accueil de la télécommande, puis Applications.'); return; }
     if (a.id === 'tizentube') lancerTizenTube(a.secours); else lancerNatif(a.id);
   }
 
