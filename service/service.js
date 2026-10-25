@@ -8,8 +8,16 @@
 // (PORT), pour ne pas buter sur l'instance précédente qui garde le sien jusqu'au redémarrage.
 var http = require('http');
 
-var PORT = 8096;
+var PORT = 8097;
 var JETON = '/home/owner/share/tv-accueil-jeton.json';
+
+// Journal de mise au point, comme la page : requête vers le PC du salon, ignorée s'il est éteint.
+function trace(msg) {
+    try {
+        http.get('http://192.168.1.99:8099/s?m=' + encodeURIComponent(msg) + '&r=' + Math.random())
+            .on('error', function () {});
+    } catch (e) {}
+}
 
 // Client minimal de la télécommande réseau Samsung (wss://<tv>:8002), sans dépendance, en ES5
 // pour le Node 4.4.3 de TizenBrew. Ouvre la connexion, attend ms.channel.connect (qui porte le
@@ -67,7 +75,9 @@ function envoyerTouche(options, touche, rappel) {
     var fini = false;
     function terminer(erreur, info) { if (!fini) { fini = true; try { socket.end(); } catch (e) {} rappel(erreur, info); } }
 
+    trace('tls connect ' + hote + ' jeton=' + (jeton ? 'oui' : 'non'));
     var socket = tls.connect({ host: hote, port: 8002, rejectUnauthorized: false }, function () {
+        trace('tls connecté');
         socket.write('GET ' + chemin + ' HTTP/1.1\r\nHost: ' + hote + ':8002\r\nUpgrade: websocket\r\n' +
             'Connection: Upgrade\r\nSec-WebSocket-Key: ' + crypto.randomBytes(16).toString('base64') +
             '\r\nSec-WebSocket-Version: 13\r\n\r\n');
@@ -76,6 +86,7 @@ function envoyerTouche(options, touche, rappel) {
     var poigneeFaite = false;
     socket.on('data', function (morceau) {
         tampon = Buffer.concat([tampon, morceau]);
+        trace('données ' + morceau.length + ' : ' + morceau.toString('utf8', 0, Math.min(120, morceau.length)));
         if (!poigneeFaite) {
             var fin = tampon.toString('binary').indexOf('\r\n\r\n');
             if (fin < 0) return;
@@ -99,7 +110,7 @@ function envoyerTouche(options, touche, rappel) {
             }
         });
     });
-    socket.on('error', function (e) { terminer(String(e)); });
+    socket.on('error', function (e) { trace('erreur ' + e); terminer(String(e)); });
     // Laisse le temps d'accepter la demande d'accès affichée sur la TV la première fois.
     socket.setTimeout(45000, function () { terminer('délai dépassé (demande d\'accès non validée ?)'); });
 }
@@ -112,8 +123,10 @@ function repondre(res, objet) {
 }
 
 var serveur = http.createServer(function (req, res) {
+    trace('requête ' + req.url);
     if (req.url.indexOf('/eteindre') === 0) {
         return envoyerTouche({ hote: '127.0.0.1', fichierJeton: JETON }, 'KEY_POWER', function (erreur, info) {
+            trace('eteindre fini ' + (erreur || JSON.stringify(info)));
             repondre(res, erreur ? { ok: false, erreur: erreur } : { ok: true, info: info });
         });
     }
@@ -131,3 +144,4 @@ var serveur = http.createServer(function (req, res) {
 
 serveur.on('error', function () {});
 serveur.listen(PORT, '127.0.0.1');
+trace('service démarré port ' + PORT);

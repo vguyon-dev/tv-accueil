@@ -1,7 +1,7 @@
-  var VERSION = '1.2.0';
+  var VERSION = '1.2.1';
   // Service du module à démarrer : il est lu par TizenBrew sur jsDelivr à la version épinglée de
   // `module` et écoute `port` (une version de service = une étiquette Git + un port à lui).
-  var SERVICE = { module: 'gh/vguyon-dev/tv-accueil@v1.1.2', port: 8096 };
+  var SERVICE = { module: 'gh/vguyon-dev/tv-accueil@v1.1.3', port: 8097 };
   // Nom complet du module tel que TizenBrew l'a enregistré (ex. gh/vguyon-dev/tv-accueil@v1.0.9),
   // lu dans l'adresse de la page : http://127.0.0.1:8081/module/<nom encodé>/app/index.html.
   var MODULE = (function () {
