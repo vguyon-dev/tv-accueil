@@ -2,7 +2,7 @@
 
 Accueil maison de la TV Samsung du salon, sous forme de module TizenBrew (`packageType: app`).
 Une page plein écran avec les applis de la maison rangées par usage (Regarder, En direct,
-Écouter, Plus : magasin d'applis Samsung, TizenBrew et Éteindre), pilotée aux flèches et à OK de la
+Écouter, Plus : magasin d'applis Samsung et TizenBrew), pilotée aux flèches et à OK de la
 télécommande.
 
 - YouTube ouvre le module TizenBrew TizenTube (`npm/@foxreis/tizentube`) par le service local de
@@ -27,12 +27,13 @@ télécommande.
   (cache de 5 min au plus), et sa propre copie en secours.
 - `app/accueil.css`, `app/accueil.js` : l'accueil lui-même. Un push sur `main` suffit : la TV
   prend la nouvelle version à l'ouverture suivante, sans réinstaller le module.
-- `service/service.js` : service Node du module : lancement des applis (`/lancer/<id>`) et
-  extinction (`/eteindre`, touche Power par la télécommande réseau wss 8002 ; la TV demande une
-  fois d'autoriser « Accueil », jeton gardé dans `/home/owner/share/tv-accueil-jeton.json`).
+- `service/service.js` : service Node du module : lancement des applis (`/lancer/<id>`).
   TizenBrew le lit seul sur jsDelivr à une version épinglée : chaque changement du service =
   nouvelle étiquette Git + nouveau port, reportés dans `SERVICE` en tête de `app/accueil.js`
-  (l'ancienne instance garde son port jusqu'au redémarrage de la TV).
+  (l'ancienne instance garde son port jusqu'au redémarrage de la TV). Son `/eteindre` (touche
+  Power par la télécommande réseau) ne marche pas : la TV répond `ms.channel.timeOut` à toute
+  connexion venue d'elle-même, d'où la tuile Éteindre retirée. Pour se rallumer sur l'Accueil,
+  éteindre la TV au bouton Power pendant que l'Accueil est affiché (« dernière appli » active).
 
 ## Installation sur la TV
 

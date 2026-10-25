@@ -1,4 +1,4 @@
-  var VERSION = '1.2.1';
+  var VERSION = '1.2.2';
   // Service du module à démarrer : il est lu par TizenBrew sur jsDelivr à la version épinglée de
   // `module` et écoute `port` (une version de service = une étiquette Git + un port à lui).
   var SERVICE = { module: 'gh/vguyon-dev/tv-accueil@v1.1.3', port: 8097 };
@@ -27,8 +27,7 @@
     ] },
     { titre: 'Plus', applis: [
       { nom: 'Applis (store)', id: 'store', couleur: '#2d5a8c' },
-      { nom: 'TizenBrew', id: 'menu-tizenbrew', couleur: '#4a3f6b' },
-      { nom: 'Éteindre', id: 'eteindre', couleur: '#3a3f47' }
+      { nom: 'TizenBrew', id: 'menu-tizenbrew', couleur: '#4a3f6b' }
     ] }
   ];
 
